@@ -53,7 +53,7 @@ def generar_resumen(diccionario_df, hoja_excluir):
         if key == hoja_excluir or not {"VAN (S/)", "Instrumento"}.issubset(df.columns):
             continue
         
-        pos_rf = df[df["Instrumento"].isin(["X0001", "X0002", "X0003", "X0005",  "X0007"])]["VAN (S/)"]
+        pos_rf = df[df["Instrumento"].isin(["X0001", "X0002", "X0003", "X0005", "X0007"])]["VAN (S/)"]
         pos_rv = df[df["Instrumento"].isin(["X0006", "X0008"])]["VAN (S/)"]
 
         activo_fondo = df_excluir.get("Activo (S/.)", pd.Series([1]))
