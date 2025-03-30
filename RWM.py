@@ -56,8 +56,8 @@ def generar_resumen(diccionario_df, hoja_excluir):
         pos_rf = df[df["Instrumento"].isin(["X0001", "X0002", "X0003", "X0005", "X0007"])]["VAN (S/)"]
         pos_rv = df[df["Instrumento"].isin(["X0006", "X0008"])]["VAN (S/)"]
 
-        activo_fondo = df_excluir.get("Activo (S/.)", pd.Series([1]))
-        activo_fondo = activo_fondo.iloc[0] if not activo_fondo.empty else 1  
+        activo_fondo = df_excluir[df_excluir["Fondo"].astype(str).str.contains(key, na=False)]["Activo (S/.)"]
+        activo_fondo = activo_fondo.iloc[0] if not activo_fondo.empty else 1
 
         posicion_rf = pos_rf.sum() / activo_fondo if not pos_rf.empty else 0
         posicion_rv = pos_rv.sum() / activo_fondo if not pos_rv.empty else 0
