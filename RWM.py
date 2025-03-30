@@ -96,6 +96,42 @@ def main():
                 if evaluacion_df is not None:
                     st.dataframe(evaluacion_df)
                     graficar_resumen_premium(st.session_state["resumen_df"])
+def main():
+    st.image("https://i.pinimg.com/474x/5d/47/07/5d4707dfb4cfe73ff831c55cd64c9e49.jpg", width=250)
+    st.title("Posición del Portfolio")
+    archivo = st.file_uploader("Cargar archivo Excel", type=["xls", "xlsx"])
+
+    if archivo:
+        diccionario_df = cargar_excel_a_diccionario(archivo)
+        hojas = list(diccionario_df.keys())
+
+        if not hojas:
+            st.error("No se encontraron hojas en el archivo cargado.")
+            return
+
+        hoja_excluir = st.selectbox("Seleccionar hoja de posición total de la cartera y activo por fondo", hojas)
+
+        if st.button("Generar Resumen"):
+            resumen_df = generar_resumen(diccionario_df, hoja_excluir)
+            if resumen_df is not None:
+                st.session_state["resumen_df"] = resumen_df
+                st.dataframe(resumen_df)
+
+        if "resumen_df" in st.session_state:
+            with st.form(key="umbrales_form"):
+                umbral_rf = st.text_input("Umbral RF", "80% - 100%")
+                umbral_rv = st.text_input("Umbral RV", "0% - 20%")
+                limite_duracion = st.text_input("Límite Duración", "0 - 3")
+                submit_button = st.form_submit_button(label="Evaluar Umbrales")
+
+            if submit_button:
+                evaluacion_df = evaluar_umbral(st.session_state["resumen_df"], umbral_rf, umbral_rv, limite_duracion)
+                if evaluacion_df is not None:
+                    st.dataframe(evaluacion_df)
+                    graficar_resumen_premium(st.session_state["resumen_df"])
+
+    st.markdown("---")
+    st.markdown("Riesgos Wealth Management - Franco Olivares")
 
 if __name__ == "__main__":
     main()
