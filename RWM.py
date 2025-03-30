@@ -21,25 +21,21 @@ def cargar_excel_a_diccionario(ruta_archivo):
             df.columns = df.iloc[0].astype(str)
             df = df.iloc[1:].reset_index(drop=True)
 
-        # Función para manejar conversiones a numérico
-        def safe_to_numeric(x):
-            try:
-                return pd.to_numeric(x)
-            except ValueError:
-                return x  # Si no es convertible a numérico, devuelve el valor original
-
-        df = df.apply(safe_to_numeric)
+        # Convertir valores numéricos correctamente
+        def convertir_numerico(valor):
+            if pd.isna(valor):
+                return valor
+            if isinstance(valor, str) and valor.replace('.', '', 1).isdigit():
+                try:
+                    return float(valor) if '.' in valor else int(valor)
+                except ValueError:
+                    return valor
+            return valor
+        
+        df = df.applymap(convertir_numerico)
         diccionario_df[hoja] = df
 
     return diccionario_df
-
-def parse_range(rango):
-    try:
-        min_val, max_val = rango.replace("%", "").split(" - ")
-        return float(min_val) / 100 if "%" in rango else float(min_val), float(max_val) / 100 if "%" in rango else float(max_val)
-    except ValueError:
-        st.error(f"Formato incorrecto en el rango: {rango}. Debe ser 'X - Y' con valores numéricos.")
-        return None, None
 
 def generar_resumen(diccionario_df, hoja_excluir):
     if hoja_excluir not in diccionario_df:
@@ -52,15 +48,21 @@ def generar_resumen(diccionario_df, hoja_excluir):
     for key, df in diccionario_df.items():
         if key == hoja_excluir or not {"VAN (S/)", "Instrumento"}.issubset(df.columns):
             continue
-        
-        pos_rf = df[df["Instrumento"].isin(["X0001", "X0002", "X0003", "X0005", "X0007"])]["VAN (S/)"]
-        pos_rv = df[df["Instrumento"].isin(["X0006", "X0008"])]["VAN (S/)"]
+
+        pos_rf = df[df["Instrumento"].isin(["X0001", "X0002", "X0003", "X0005", "X0007"])]
+        pos_rv = df[df["Instrumento"].isin(["X0006", "X0008"])]
+
+        suma_rf = pos_rf["VAN (S/)"].sum() if not pos_rf.empty else 0
+        suma_rv = pos_rv["VAN (S/)"].sum() if not pos_rv.empty else 0
+
+        # Asegurar que "Activo (S/.)" sea tratado como numérico
+        df_excluir["Activo (S/.)"] = pd.to_numeric(df_excluir["Activo (S/.)"], errors="coerce")
 
         activo_fondo = df_excluir[df_excluir["Fondo"].astype(str).str.contains(key, na=False)]["Activo (S/.)"]
         activo_fondo = activo_fondo.iloc[0] if not activo_fondo.empty else 1
 
-        posicion_rf = pos_rf.sum() / activo_fondo if not pos_rf.empty else 0
-        posicion_rv = pos_rv.sum() / activo_fondo if not pos_rv.empty else 0
+        posicion_rf = suma_rf / activo_fondo
+        posicion_rv = suma_rv / activo_fondo
 
         if "Duración Macaulay" in df.columns and "VAN (S/)" in df.columns:
             duracion_ponderada = (df["VAN (S/)"] / df["VAN (S/)"].sum() * df["Duración Macaulay"]).sum()
